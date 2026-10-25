@@ -1,7 +1,7 @@
 {
   "name": "@comwit/ui",
   "version": "0.6.0",
-  "description": "Comwit UI — headless UI primitives with a self-built behavior/a11y engine (ported from Radix Primitives), plus the original Comwit icon set under @comwit/ui/icons. Styled, editable component source lives in @comwit/ui-templates.",
+  "description": "Comwit UI \u2014 headless UI primitives with a self-built behavior/a11y engine (ported from Radix Primitives), plus the original Comwit icon set under @comwit/ui/icons. Styled, editable component source lives in @comwit/ui-templates.",
   "keywords": [
     "react",
     "headless",
@@ -93,10 +93,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/burrr-ai/comwit.git",
-    "directory": "packages/ui/core"
+    "url": "git+https://github.com/comwit/ui.git",
+    "directory": "core"
   },
   "bugs": {
-    "url": "https://github.com/burrr-ai/comwit/issues"
+    "url": "https://github.com/comwit/ui/issues"
   }
 }

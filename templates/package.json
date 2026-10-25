@@ -1,7 +1,7 @@
 {
   "name": "@comwit/ui-templates",
   "version": "0.7.0",
-  "description": "Comwit UI templates — copy-paste styled components (shadcn-inspired ownership model, no shadcn tooling) built on the @comwit/ui headless engine.",
+  "description": "Comwit UI templates \u2014 copy-paste styled components (shadcn-inspired ownership model, no shadcn tooling) built on the @comwit/ui headless engine.",
   "keywords": [
     "react",
     "ui",
@@ -74,10 +74,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/burrr-ai/comwit.git",
-    "directory": "packages/ui/templates"
+    "url": "git+https://github.com/comwit/ui.git",
+    "directory": "templates"
   },
   "bugs": {
-    "url": "https://github.com/burrr-ai/comwit/issues"
+    "url": "https://github.com/comwit/ui/issues"
   }
 }

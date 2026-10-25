@@ -1,0 +1,15 @@
+packages:
+  - core
+  - templates
+  - cli
+  - apps/*
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  "@tailwindcss/oxide": true
+
+minimumReleaseAgeExclude:
+  - "@ssgoi/core@7.3.1"
+  - "@ssgoi/react@7.3.1"

@@ -1,0 +1,14 @@
+{
+  "name": "comwit-ui-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "dev": "pnpm --filter @comwit/ui dev",
+    "build": "pnpm --filter @comwit/ui build && pnpm --filter comwit-ui build:registry",
+    "test": "pnpm --filter @comwit/ui test",
+    "typecheck": "pnpm build && pnpm --filter storybook stories && pnpm -r --if-present typecheck",
+    "storybook": "pnpm build && pnpm --filter storybook dev",
+    "build:storybook": "pnpm build && pnpm --filter storybook build",
+    "dev:catalog": "pnpm build && pnpm --filter ui-dev dev"
+  }
+}
