@@ -1,7 +1,7 @@
 {
   "name": "comwit-ui",
   "version": "0.7.0",
-  "description": "Comwit UI CLI — install editable component source with a bundled registry and the @comwit/ui behavior engine. Independent of shadcn tooling.",
+  "description": "Comwit UI CLI \u2014 install editable component source with a bundled registry and the @comwit/ui behavior engine. Independent of shadcn tooling.",
   "keywords": [
     "comwit",
     "ui",
@@ -34,10 +34,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/burrr-ai/comwit.git",
-    "directory": "packages/ui/cli"
+    "url": "git+https://github.com/comwit/ui.git",
+    "directory": "cli"
   },
   "bugs": {
-    "url": "https://github.com/burrr-ai/comwit/issues"
+    "url": "https://github.com/comwit/ui/issues"
   }
 }

@@ -143,7 +143,7 @@ import {
   XAnimatedDefinition,
   XCircleAnimatedDefinition,
   ZapAnimatedDefinition,
-} from './generated/definitions'
+} from "./generated/definitions";
 export const iconCatalog = [
   AlertCircleAnimatedDefinition,
   AlertTriangleAnimatedDefinition,
@@ -288,4 +288,4 @@ export const iconCatalog = [
   XAnimatedDefinition,
   XCircleAnimatedDefinition,
   ZapAnimatedDefinition,
-] as const
+] as const;
