@@ -3,7 +3,7 @@
 /**
  * PageTransition — native app-style route transitions (drill, sheet, slide, and more).
  *
- * Keep the router and place one PageBoundary at the DOM boundary that changes per route. The engine
+ * Keep the router. PageTransition mounts the engine once; route-owned boundaries mark what moves. The engine
  * observes boundaries appearing/disappearing, briefly retaining exiting pages to animate them.
  *
  *   const transitions = {
@@ -14,22 +14,39 @@
  *     ],
  *   } satisfies PageTransitionConfig
  *
+ * Apps with a router: pass the router adapter as framework (routeFramework from route-boundary.tsx, installed
+ * by CLI router detection) and let screens own the boundaries. Pages render AppScreen (app-screen.tsx) and
+ * route-group layouts render AppGroupLayout (app-group-layout.tsx); both are unkeyed page boundaries, so the
+ * root layout holds only the provider. AppShell (app-shell.tsx) wires all of this for you.
+ *
+ *   <PageTransition config={transitions} framework={routeFramework}>{children}</PageTransition>
+ *   // (tabs)/layout.tsx:      <AppGroupLayout>{children}<BottomNav … /></AppGroupLayout>
+ *   // (tabs)/search/page.tsx: <AppScreen bar="tab" title="Search">…</AppScreen>
+ *
+ * An unkeyed boundary never forces a remount. Next.js Cache Components keeps visited routes alive in React
+ * <Activity>: hiding a route is the OUT, showing it again is the IN, and Back restores its state. Routers that
+ * unmount routes work the same way. Intercepted @modal pages are not wrapped; the slot animates by itself.
+ *
+ * Without a router, PageBoundary is the keyed low-level boundary: path is the logical rule-matching path;
+ * routeKey is the DOM lifetime key (defaults to path). A key change remounts the element, which the engine turns
+ * into a transition, so state alone (const [path, setPath] = useState('/notes')) drives it:
+ *
  *   <PageTransition config={transitions}>
  *     <PageBoundary path={pathname}>{children}</PageBoundary>
  *   </PageTransition>
  *
+ * Don't mix keyed PageBoundary and unkeyed page boundaries (AppScreen, AppGroupLayout, RouteBoundary) in the
+ * same region.
+ *
  * - PageTransition: mount once at the app root. Provides a flex-column layout shell, filled by growing boundaries.
  *   Percentage min-height cannot resolve against an auto-height parent, so this wiring keeps sticky tab bars
  *   at the bottom of short pages. The scroller owns positioning, stacking, and horizontal clipping; see below.
- * - PageBoundary: route-owned DOM. path is the logical rule-matching path; routeKey is the DOM lifetime key
- *   (defaults to path). A key change remounts the element, which the engine turns into a transition. State alone
- *   (const [path, setPath] = useState('/notes')) also works without a router. Default grow + min-h-full fills
- *   the shell in normal flow and preserves shell height while exiting absolutely, keeping sticky bars at the bottom.
- * - RouteBoundary (route-boundary.tsx, installed by CLI router detection): a PageBoundary that reads router
- *   pathname. Next.js and TanStack Router wrap the official ssgoi adapters (@ssgoi/react/nextjs and /tanstack-router).
+ * - Boundaries default to grow + min-h-full: they fill the shell in normal flow and preserve shell height while
+ *   exiting absolutely, keeping sticky bars at the bottom.
  *
  * Keep the app bar inside the page boundary so it moves with the page. A persistent shell contains only
- * elements below the page, such as the tab bar. Fix the outer routeKey while the inner boundary changes pages:
+ * elements below the page, such as the tab bar. With keyed boundaries, fix the outer routeKey while the inner
+ * boundary changes pages:
  *
  *   <PageBoundary routeKey="tabs" className="flex min-h-full flex-col">
  *     <PageBoundary path={pathname} className="flex-1">      // Page, including its app bar.
@@ -59,7 +76,7 @@
  */
 
 import * as React from 'react'
-import { Ssgoi, type SsgoiConfig } from '@ssgoi/react'
+import { Ssgoi, type SsgoiConfig, type SsgoiFramework } from '@ssgoi/react'
 import { axis, drill } from '@ssgoi/react/view-transitions'
 
 import { cn } from '../../lib/utils'
@@ -67,8 +84,16 @@ import { cn } from '../../lib/utils'
 /** Transition rules: transitions array (or ({ isMobile }) => array), with optional middleware and scrollLock. Syntax: https://ssgoi.dev/llms.txt */
 export type PageTransitionConfig = SsgoiConfig
 
+/**
+ * How the engine reads the router: a module-scope object whose useRoute hook returns { pathname } (or null
+ * while the router isn't ready). route-boundary.tsx exports one for your router as routeFramework.
+ */
+export type PageTransitionFramework = SsgoiFramework
+
 type PageTransitionProps = React.ComponentProps<'div'> & {
   config: PageTransitionConfig
+  /** Router adapter. Required by unkeyed page boundaries (AppScreen, AppGroupLayout, RouteBoundary); keep it stable. */
+  framework?: PageTransitionFramework
   children: React.ReactNode
 }
 
@@ -76,7 +101,7 @@ type PageTransitionProps = React.ComponentProps<'div'> & {
  * Mount once at the app root, outside the routed area. The shell defaults to document scrolling (min-h-dvh).
  * Inside a custom scroller, change only the height with className="min-h-full". The scroller owns horizontal clipping (see above).
  */
-function PageTransition({ config, className, children, ...props }: PageTransitionProps) {
+function PageTransition({ config, framework, className, children, ...props }: PageTransitionProps) {
   return (
     <div
       data-slot="page-transition"
@@ -85,7 +110,9 @@ function PageTransition({ config, className, children, ...props }: PageTransitio
       className={cn('flex min-h-dvh flex-col', className)}
       {...props}
     >
-      <Ssgoi config={config}>{children}</Ssgoi>
+      <Ssgoi config={config} framework={framework}>
+        {children}
+      </Ssgoi>
     </div>
   )
 }
@@ -100,7 +127,7 @@ export type PageBoundaryProps<T extends React.ElementType = 'div'> = {
 } & Omit<React.ComponentPropsWithoutRef<T>, 'as' | 'children' | 'path' | 'routeKey'>
 
 /**
- * Route-owned DOM boundary. When the key changes, React recreates the element and the engine animates that replacement.
+ * Keyed route-owned DOM boundary for router-less use (state-driven demos). When the key changes, React recreates the element and the engine animates that replacement.
  * Compute path and routeKey during render; deferring to an effect would remove the old page too early.
  */
 function PageBoundary<T extends React.ElementType = 'div'>({
@@ -130,8 +157,8 @@ function PageBoundary<T extends React.ElementType = 'div'>({
 type TransitionRules = Extract<NonNullable<PageTransitionConfig['transitions']>, readonly unknown[]>
 
 /**
- * Default mobile app rules: tab-to-tab transitions follow tab order horizontally, with a stable outer boundary
- * key keeping the tab bar still. All other entries use drill; browser back reverses it. Add specific screen
+ * Default mobile app rules: tab-to-tab transitions follow tab order horizontally while the tab group boundary
+ * (TabShell / AppGroupLayout) stays, keeping the tab bar still. All other entries use drill; browser back reverses it. Add specific screen
  * relationships through transitions, which take precedence over the fallback.
  *
  *   appTransitions(APP_TAB_PATHS, {

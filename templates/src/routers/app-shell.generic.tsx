@@ -10,12 +10,19 @@
  *
  *   const [path, setPath] = useState('/') // In real apps, use the router pathname and push.
  *   <AppShell tabs={TABS} path={path} onNavigate={setPath}>
- *     {isTab ? <TabShell>{page}</TabShell> : page}
+ *     {isTab ? (
+ *       <TabShell><AppScreen key={path} bar="tab" title={title}>{page}</AppScreen></TabShell>
+ *     ) : (
+ *       <AppGroupLayout><DetailScreen key={path} fallback="/">{page}</DetailScreen></AppGroupLayout>
+ *     )}
  *   </AppShell>
  *
- * Tab href paths share the outer boundary key, preserving the tab bar while the body slides horizontally.
- * Other paths (details) replace that boundary and enter with drill. Without onNavigate, tabs use a href
- * with full page loads, and back-navigation fallback uses location.replace.
+ * AppShell holds no boundary; it provides path to the boundaries (routeFramework + RoutePathProvider). Group
+ * layouts (TabShell, AppGroupLayout) and pages (AppScreen) are unkeyed boundaries (SSGOI SsgoiPageBoundary):
+ * the change that unmounts one is its OUT. Tab → tab swaps only the page while TabShell and its tab bar stay;
+ * tab → detail moves the whole tab group, tab bar included. Key a page by path when one component renders
+ * several paths. Without onNavigate, tabs use a href with full page loads, and back-navigation fallback uses
+ * location.replace.
  *
  * For supported routers (next, react-router, @tanstack/react-router), reinstall the complete integration with
  * comwit-ui add app-shell --router <name>.
@@ -25,13 +32,14 @@ import * as React from 'react'
 import { AppShell as AppShellPrimitive, NavDepthProvider } from '@comwit/ui'
 
 import { cn } from '../lib/utils'
+import { AppGroupLayout } from '../components/ui/app-group-layout'
 import {
-  PageBoundary,
   PageTransition,
   appTransitions,
   type PageTransitionConfig,
 } from '../components/ui/page-transition'
 import { PullIndicator } from '../components/ui/pull-to-refresh'
+import { RoutePathProvider, routeFramework } from './route-boundary.generic'
 import { TabBar, type AppTab } from './tab-bar.generic'
 
 type AppShellProps = {
@@ -99,14 +107,8 @@ function AppShell({
           <AppShellPrimitive.Root onRefresh={onRefresh} resetKey={path}>
             <PullIndicator />
             <AppShellPrimitive.Scroller>
-              <PageTransition config={config} className="min-h-full">
-                <PageBoundary
-                  path={path}
-                  routeKey={tabPaths.includes(path) ? 'app-tabs' : path}
-                  className="flex flex-col bg-background"
-                >
-                  {children}
-                </PageBoundary>
+              <PageTransition config={config} framework={routeFramework} className="min-h-full">
+                <RoutePathProvider path={path}>{children}</RoutePathProvider>
               </PageTransition>
             </AppShellPrimitive.Scroller>
           </AppShellPrimitive.Root>
@@ -121,19 +123,14 @@ type TabShellProps = {
   children: React.ReactNode
 }
 
-/** Shell for tab screens: only the body boundary changes while the tab bar persists. Wrap tab pages with this. */
+/** Tab-group layout: one group boundary (AppGroupLayout) around the tab pages and the tab bar. Wrap tab pages with this. */
 function TabShell({ className, children }: TabShellProps) {
   const { tabs, path, onNavigate } = React.useContext(AppShellContext)
   return (
-    <>
-      <PageBoundary
-        path={path}
-        className={cn('flex min-h-0 flex-1 flex-col bg-background', className)}
-      >
-        {children}
-      </PageBoundary>
+    <AppGroupLayout className={className}>
+      {children}
       <TabBar tabs={tabs} value={path} onNavigate={onNavigate} />
-    </>
+    </AppGroupLayout>
   )
 }
 

@@ -6,6 +6,7 @@
 export * from './components/ui/accordion'
 export * from './components/ui/alert'
 export * from './components/ui/app-bar'
+export * from './components/ui/app-group-layout'
 export * from './components/ui/app-screen'
 export * from './components/ui/autocomplete'
 export * from './components/ui/avatar'

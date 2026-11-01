@@ -2,10 +2,11 @@ export const specs = [
   {
     title: 'AppShell',
     slug: 'app-shell',
-    covers: ['app-shell', 'tab-bar', 'app-screen'],
+    covers: ['app-shell', 'tab-bar', 'app-screen', 'app-group-layout'],
     imports: [
       { from: '@comwit/ui-templates/app-shell', names: ['AppShell', 'TabShell'] },
       { from: '@comwit/ui-templates/app-screen', names: ['AppScreen', 'DetailScreen'] },
+      { from: '@comwit/ui-templates/app-group-layout', names: ['AppGroupLayout'] },
       { from: '@comwit/ui-templates/button', names: ['Button'] },
     ],
     extraImports: [
@@ -27,7 +28,7 @@ const NOTES = [
         name: 'Default',
         gallery: true,
         description:
-          'The whole mobile shell from one component: the only scroller, pull to refresh, the scroll intent the app bar and tab bar share, page transitions and history-aware back. Tabs slide sideways under a bar that stays put; a detail drills in and takes the bar with it. Installed for your router (Next.js, React Router, TanStack Router) — this demo is the generic one driven by state.',
+          'The whole mobile shell from one component: the only scroller, pull to refresh, the scroll intent the app bar and tab bar share, page transitions and history-aware back. AppShell is the provider only; TabShell (an AppGroupLayout with the tab bar inside) and AppScreen are unkeyed page boundaries, so nothing is forced to remount. Tabs slide sideways under a bar that stays put; a detail drills in and takes the tab group with it. Installed for your router (Next.js, React Router, TanStack Router) — this demo is the generic one driven by state, so each screen is keyed by its path.',
         renderFn: `const [path, setPath] = React.useState('/')
 const isTab = TABS.some((t) => t.href === path)
 const note = NOTES.find((n) => '/notes/' + n.id === path)
@@ -38,7 +39,7 @@ return (
     <AppShell tabs={TABS} path={path} onNavigate={setPath} onRefresh={refresh} className="h-full">
       {isTab ? (
         <TabShell>
-          <AppScreen title={TABS.find((t) => t.href === path)?.label}>
+          <AppScreen key={path} bar="tab" title={TABS.find((t) => t.href === path)?.label}>
             <p className="px-5 pb-2 text-caption text-muted-foreground">
               Updated {updated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
             </p>
@@ -67,12 +68,14 @@ return (
           </AppScreen>
         </TabShell>
       ) : (
-        <DetailScreen fallback="/" title={note?.title}>
-          <p className="px-5 pt-2 pb-6 text-body text-soft-foreground">{note?.body}</p>
-          <div className="px-5">
-            <Button variant="outline" onClick={() => setPath('/')}>Done</Button>
-          </div>
-        </DetailScreen>
+        <AppGroupLayout>
+          <DetailScreen key={path} fallback="/" title={note?.title}>
+            <p className="px-5 pt-2 pb-6 text-body text-soft-foreground">{note?.body}</p>
+            <div className="px-5">
+              <Button variant="outline" onClick={() => setPath('/')}>Done</Button>
+            </div>
+          </DetailScreen>
+        </AppGroupLayout>
       )}
     </AppShell>
   </div>

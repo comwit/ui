@@ -1,16 +1,28 @@
 'use client'
 
 /**
- * AppScreen — one screen with an app bar and body. The app bar stays inside the route/page boundary and moves
- * with the page; this component does not add another boundary.
+ * AppScreen — one screen with an app bar and body, and the page's transition boundary. Every page renders it (or
+ * DetailScreen) as its top-most element; route-group layouts render AppGroupLayout instead.
  *
+ * bar picks the app bar; omit it for none:
  * - bar="tab": tab root. Without a title/actions, only the top safe-area space remains. Uses flow behavior.
  * - bar="back": detail screen. Glass back button goes back with in-app history or replaces with fallback on direct entry. Uses reveal.
  * - bar="sheet": temporary task (creating/selecting). Close X on the right. Uses pinned behavior.
- * - bar="none": no app bar, such as a full-bleed hero with a manually placed FloatingBackButton.
+ * - omitted: no app bar and no safe-area spacing; the boundary only. For screens that own their top edge
+ *   (entry, payment, fullscreen, a full-bleed hero with a manually placed FloatingBackButton).
  *
- *   <AppScreen title="Home" actions={<Button size="icon" variant="ghost"><Bell /></Button>}>…</AppScreen>
+ *   <AppScreen bar="tab" title="Home" actions={<Button size="icon" variant="ghost"><Bell /></Button>}>…</AppScreen>
  *   <DetailScreen fallback="/posts" title={post.title}>…</DetailScreen>
+ *
+ * The root element is SSGOI's SsgoiPageBoundary, so the app bar moves with the page. It is never keyed: Next.js
+ * Cache Components keeps visited routes alive in React <Activity> and hides the route's top-most host node
+ * (hiding is the OUT, showing again is the IN, and Back restores state), so render AppScreen at the top of the
+ * page with no wrapper element above it (Suspense and fragments are fine). Routers that unmount routes work too;
+ * give each route its own page component (or key AppScreen by path) so a route change replaces the boundary.
+ * Needs PageTransition with a framework above it; AppShell provides one. Intercepted @modal pages don't use it.
+ *
+ * className and other element props land on the boundary element, the element the transition moves, so its
+ * background travels with it.
  *
  * DetailScreen is an alias for details, accepting variant ("back" | "sheet") instead of bar and adding bottom
  * safe-area spacing. @comwit/ui NavDepth, installed by AppShell, handles back navigation. AppShell sets
@@ -19,6 +31,7 @@
 
 import * as React from 'react'
 import { useBackNavigation } from '@comwit/ui'
+import { SsgoiPageBoundary } from '@ssgoi/react'
 
 import {
   AppBar,
@@ -29,10 +42,11 @@ import {
 } from './app-bar'
 import { cn } from '../../lib/utils'
 
-export type AppScreenBar = 'tab' | 'back' | 'sheet' | 'none'
+export type AppScreenBar = 'tab' | 'back' | 'sheet'
 
-type AppScreenProps = {
+type AppScreenProps = Omit<React.ComponentPropsWithoutRef<'div'>, 'title' | 'children'> & {
   children: React.ReactNode
+  /** App bar kind. Omitted: no app bar and no safe-area spacing (boundary only). */
   bar?: AppScreenBar
   title?: string
   /** Node replacing the title area, such as a search field or segmented control. */
@@ -42,30 +56,31 @@ type AppScreenProps = {
   fallback?: string
   /** Defaults: tab=flow, back=reveal, sheet=pinned. */
   appBarBehavior?: AppBarBehavior
-  className?: string
 }
 
 function AppScreen({
   children,
-  bar = 'tab',
+  bar,
   title,
   leading,
   actions,
   fallback = '/',
   appBarBehavior,
   className,
+  ...props
 }: AppScreenProps) {
   const back = useBackNavigation(fallback)
   const behavior =
     appBarBehavior ?? (bar === 'back' ? 'reveal' : bar === 'sheet' ? 'pinned' : 'flow')
-  const empty = bar === 'none' || (bar === 'tab' && !title && !leading && !actions)
+  const empty = bar === 'tab' && !title && !leading && !actions
 
   return (
-    <div
+    <SsgoiPageBoundary
+      {...props}
       data-slot="app-screen"
       className={cn('relative flex flex-1 flex-col bg-background', className)}
     >
-      {empty ? (
+      {!bar ? null : empty ? (
         <div
           className="h-[var(--app-safe-area-top,env(safe-area-inset-top))] shrink-0"
           aria-hidden="true"
@@ -84,7 +99,7 @@ function AppScreen({
         </AppBar>
       )}
       <div className="flex-1">{children}</div>
-    </div>
+    </SsgoiPageBoundary>
   )
 }
 
@@ -106,3 +121,4 @@ function DetailScreen({ variant = 'back', className, ...props }: DetailScreenPro
 }
 
 export { AppScreen, DetailScreen }
+export type { AppScreenProps, DetailScreenProps }
