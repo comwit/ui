@@ -4,14 +4,14 @@
  * AppScreen — one screen with an app bar and body, and the page's transition boundary. Every page renders it (or
  * DetailScreen) as its top-most element; route-group layouts render AppGroupLayout instead.
  *
+ * bar picks the app bar; omit it for none:
  * - bar="tab": tab root. Without a title/actions, only the top safe-area space remains. Uses flow behavior.
  * - bar="back": detail screen. Glass back button goes back with in-app history or replaces with fallback on direct entry. Uses reveal.
  * - bar="sheet": temporary task (creating/selecting). Close X on the right. Uses pinned behavior.
- * - bar="none": no app bar, such as a full-bleed hero with a manually placed FloatingBackButton. Keeps the top safe area.
- * - bar={false}: no app bar and no safe-area spacing, for screens that own their top edge (entry, payment,
- *   fullscreen) and only need the boundary.
+ * - omitted: no app bar and no safe-area spacing; the boundary only. For screens that own their top edge
+ *   (entry, payment, fullscreen, a full-bleed hero with a manually placed FloatingBackButton).
  *
- *   <AppScreen title="Home" actions={<Button size="icon" variant="ghost"><Bell /></Button>}>…</AppScreen>
+ *   <AppScreen bar="tab" title="Home" actions={<Button size="icon" variant="ghost"><Bell /></Button>}>…</AppScreen>
  *   <DetailScreen fallback="/posts" title={post.title}>…</DetailScreen>
  *
  * The root element is SSGOI's SsgoiPageBoundary, so the app bar moves with the page. It is never keyed: Next.js
@@ -42,12 +42,12 @@ import {
 } from './app-bar'
 import { cn } from '../../lib/utils'
 
-export type AppScreenBar = 'tab' | 'back' | 'sheet' | 'none'
+export type AppScreenBar = 'tab' | 'back' | 'sheet'
 
 type AppScreenProps = Omit<React.ComponentPropsWithoutRef<'div'>, 'title' | 'children'> & {
   children: React.ReactNode
-  /** Defaults to "tab". false renders no app bar and no safe-area spacing. */
-  bar?: AppScreenBar | false
+  /** App bar kind. Omitted: no app bar and no safe-area spacing (boundary only). */
+  bar?: AppScreenBar
   title?: string
   /** Node replacing the title area, such as a search field or segmented control. */
   leading?: React.ReactNode
@@ -60,7 +60,7 @@ type AppScreenProps = Omit<React.ComponentPropsWithoutRef<'div'>, 'title' | 'chi
 
 function AppScreen({
   children,
-  bar = 'tab',
+  bar,
   title,
   leading,
   actions,
@@ -72,7 +72,7 @@ function AppScreen({
   const back = useBackNavigation(fallback)
   const behavior =
     appBarBehavior ?? (bar === 'back' ? 'reveal' : bar === 'sheet' ? 'pinned' : 'flow')
-  const empty = bar === 'none' || (bar === 'tab' && !title && !leading && !actions)
+  const empty = bar === 'tab' && !title && !leading && !actions
 
   return (
     <SsgoiPageBoundary
@@ -80,7 +80,7 @@ function AppScreen({
       data-slot="app-screen"
       className={cn('relative flex flex-1 flex-col bg-background', className)}
     >
-      {bar === false ? null : empty ? (
+      {!bar ? null : empty ? (
         <div
           className="h-[var(--app-safe-area-top,env(safe-area-inset-top))] shrink-0"
           aria-hidden="true"

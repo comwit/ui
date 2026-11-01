@@ -11,7 +11,7 @@
  *   const [path, setPath] = useState('/') // In real apps, use the router pathname and push.
  *   <AppShell tabs={TABS} path={path} onNavigate={setPath}>
  *     {isTab ? (
- *       <TabShell><AppScreen key={path} title={title}>{page}</AppScreen></TabShell>
+ *       <TabShell><AppScreen key={path} bar="tab" title={title}>{page}</AppScreen></TabShell>
  *     ) : (
  *       <AppGroupLayout><DetailScreen key={path} fallback="/">{page}</DetailScreen></AppGroupLayout>
  *     )}

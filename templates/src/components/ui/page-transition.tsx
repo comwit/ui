@@ -21,7 +21,7 @@
  *
  *   <PageTransition config={transitions} framework={routeFramework}>{children}</PageTransition>
  *   // (tabs)/layout.tsx:      <AppGroupLayout>{children}<BottomNav … /></AppGroupLayout>
- *   // (tabs)/search/page.tsx: <AppScreen title="Search">…</AppScreen>
+ *   // (tabs)/search/page.tsx: <AppScreen bar="tab" title="Search">…</AppScreen>
  *
  * An unkeyed boundary never forces a remount. Next.js Cache Components keeps visited routes alive in React
  * <Activity>: hiding a route is the OUT, showing it again is the IN, and Back restores its state. Routers that

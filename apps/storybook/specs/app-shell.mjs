@@ -39,7 +39,7 @@ return (
     <AppShell tabs={TABS} path={path} onNavigate={setPath} onRefresh={refresh} className="h-full">
       {isTab ? (
         <TabShell>
-          <AppScreen key={path} title={TABS.find((t) => t.href === path)?.label}>
+          <AppScreen key={path} bar="tab" title={TABS.find((t) => t.href === path)?.label}>
             <p className="px-5 pb-2 text-caption text-muted-foreground">
               Updated {updated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
             </p>
