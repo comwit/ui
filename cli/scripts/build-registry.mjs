@@ -24,20 +24,28 @@ const ROUTER_VARIANTS = {
   generic: null,
 }
 
-// Official SSGOI router adapters identify router variants even without a direct framework import.
-const ROUTER_ADAPTERS = {
-  '@ssgoi/react/nextjs': 'next',
-  '@ssgoi/react/react-router': 'react-router',
-  '@ssgoi/react/tanstack-router': '@tanstack/react-router',
-}
-
 // Implicit dependency pairs that must be installed together.
-// page-transition installs with the detected router's route-boundary variant;
-// router-adapter boundaries require the PageTransition/Ssgoi provider.
+// page-transition installs with the detected router's route-boundary variant (its routeFramework adapter);
+// route boundaries require the PageTransition/Ssgoi provider. AppScreen and AppGroupLayout are page boundaries
+// too: they need PageTransition with a framework above them, so they bring page-transition (and route-boundary).
 const EXTRA_REGISTRY_DEPS = {
   'page-transition': ['route-boundary'],
   'route-boundary': ['page-transition'],
+  'app-screen': ['page-transition'],
+  'app-group-layout': ['page-transition'],
 }
+
+// npm ranges the CLI must install explicitly. A bare `pnpm add <name>` resolves the latest dist-tag, which
+// does not satisfy a prerelease range (e.g. @ssgoi/react ^7.5.0-beta.2 while latest is 7.4.x). Read from
+// templates/package.json so the template source and the installed version cannot drift.
+const templatesPkg = JSON.parse(
+  readFileSync(join(here, '..', '..', 'templates', 'package.json'), 'utf8')
+)
+const PINNED_VERSIONS = Object.fromEntries(
+  Object.entries(templatesPkg.dependencies ?? {}).filter(
+    ([, range]) => !range.startsWith('workspace:') && range.includes('-')
+  )
+)
 
 function pkgName(spec) {
   if (spec.startsWith('@')) return spec.split('/').slice(0, 2).join('/')
@@ -102,7 +110,6 @@ function routerVariant(name, file) {
     else if (s.startsWith('./')) registryDeps.add(s.slice(2).replace(VARIANT_SUFFIX, ''))
     else if (s.startsWith('.')) continue
     else {
-      if (ROUTER_ADAPTERS[s]) framework = ROUTER_ADAPTERS[s]
       const p = pkgName(s)
       if (IGNORE_NPM.has(p)) continue
       if (Object.values(ROUTER_VARIANTS).includes(p)) framework = p
@@ -236,6 +243,8 @@ for (const it of items) {
 const index = {
   name: 'comwit',
   homepage: 'https://github.com/burrr-ai/comwit',
+  // Ranges comwit-ui add passes to the package manager instead of a bare name.
+  versions: PINNED_VERSIONS,
   items: items.map(({ files, variants, ...meta }) =>
     variants ? { ...meta, variants: Object.keys(variants) } : meta
   ),

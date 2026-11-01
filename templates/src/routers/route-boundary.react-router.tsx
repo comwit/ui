@@ -1,40 +1,45 @@
 'use client'
 
 /**
- * RouteBoundary — React Router integration, installed when comwit-ui add page-transition detects react-router.
+ * routeFramework / RouteBoundary — React Router integration, installed when comwit-ui add page-transition detects
+ * react-router.
  *
- * Passes useLocation pathname to PageBoundary. Wrap the routed area (such as Outlet) once:
+ * routeFramework tells the engine how to read the router; pass it to PageTransition once, inside the router.
+ * AppShell does this for you.
  *
- *   <PageTransition config={transitions}>
- *     <RouteBoundary><Outlet /></RouteBoundary>
- *   </PageTransition>
+ *   <PageTransition config={transitions} framework={routeFramework}><Outlet /></PageTransition>
+ *   // Layout routes for route groups render AppGroupLayout; route pages render AppScreen (or DetailScreen).
+ *
+ * Boundaries are unkeyed (SSGOI SsgoiPageBoundary): when a route change unmounts a route's element, that
+ * boundary leaves (OUT) and the new route's boundary enters (IN). Give each route its own page component (or key
+ * AppScreen by path); one component re-rendered for another path does not unmount, so nothing moves.
+ * Query-only navigation keeps the boundary.
+ *
+ * RouteBoundary is the same unkeyed boundary with page defaults, for custom screens that don't use AppScreen.
+ * See https://ssgoi.dev/llms.txt for the boundary contract.
  */
 
 import * as React from 'react'
-import { useLocation, type Location } from 'react-router'
+import { useLocation } from 'react-router'
+import { SsgoiPageBoundary, type SsgoiPageBoundaryProps } from '@ssgoi/react'
 
-import { PageBoundary, type PageBoundaryProps } from '../components/ui/page-transition'
+import { cn } from '../lib/utils'
+import type { PageTransitionFramework } from '../components/ui/page-transition'
 
-export type RouteBoundaryProps<T extends React.ElementType = 'div'> = Omit<
-  PageBoundaryProps<T>,
-  'path' | 'resolve'
-> & {
-  /** Determine both logical path and DOM lifetime. Defaults to { id: location.pathname }. */
-  resolve?: (location: Location) => { id: string; key?: string | number }
-}
+/** Router adapter for PageTransition framework. Module scope keeps it stable. */
+export const routeFramework: PageTransitionFramework = { useRoute: () => useLocation() }
 
-function RouteBoundary<T extends React.ElementType = 'div'>({
-  resolve,
-  routeKey,
-  ...props
-}: RouteBoundaryProps<T>) {
-  const location = useLocation()
-  const boundary = resolve?.(location) ?? { id: location.pathname }
+/** as and element attributes. No route props: the boundary reads the route itself. */
+export type RouteBoundaryProps<T extends React.ElementType = 'div'> = SsgoiPageBoundaryProps<T>
+
+function RouteBoundary<T extends React.ElementType = 'div'>(props: RouteBoundaryProps<T>) {
+  const { className, ...rest } = props as { className?: string }
   return (
-    <PageBoundary<T>
-      {...(props as PageBoundaryProps<T>)}
-      path={boundary.id}
-      routeKey={routeKey ?? boundary.key}
+    <SsgoiPageBoundary<T>
+      {...(rest as RouteBoundaryProps<T>)}
+      data-slot="page-boundary"
+      // grow fills the flex-column shell in normal flow; min-h-full preserves shell height while exiting absolutely.
+      className={cn('min-h-full grow', className)}
     />
   )
 }
