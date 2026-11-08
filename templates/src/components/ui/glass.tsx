@@ -9,6 +9,8 @@
  * - GlassButton: circular/pill button with a glass layer by default (app-bar back/floating action).
  *
  * Variants: morphing (edge refraction, default), blur (strong blur), frosted, and fade (downward fade for app bars).
+ * Morphing panels blur the backdrop heavily so content behind them stays unreadable, refract the rim hard and bulge in the middle;
+ * frosted panels trade refraction for a denser film.
  * styles.css .glass* owns all visuals; this component adds classes, CSS variables, and SVG filters.
  * @comwit/ui useGlassLens handles support detection, size tracking, and canvas displacement-map generation.
  * Enable refraction only in Chromium where it is reliable; otherwise fall back to blur.
@@ -28,6 +30,8 @@ import { Button } from './button'
 import { cn } from '../../lib/utils'
 
 export type GlassVariant = 'morphing' | 'blur' | 'frosted' | 'fade'
+/** Finishes suitable for readable floating content. */
+export type GlassPanelVariant = Extract<GlassVariant, 'morphing' | 'frosted'>
 export type GlassShape = 'pill' | 'circle' | 'panel'
 
 type GlassOptions = {
@@ -82,6 +86,7 @@ function Glass({
       className={cn(
         'glass pointer-events-none absolute inset-0 z-0 rounded-[inherit]',
         VARIANT_CLASS[variant],
+        (variant === 'morphing' || variant === 'frosted') && shape === 'panel' && 'glass-panel',
         hasLens && 'glass-lens',
         pressed && 'glass-pressed',
         !shadow && 'glass-shadowless',
@@ -90,7 +95,9 @@ function Glass({
       )}
       style={style}
     >
-      {hasLens ? <GlassFilter filterId={filterId} variant={variant} lensMap={lensMap} /> : null}
+      {hasLens ? (
+        <GlassFilter filterId={filterId} variant={variant} shape={shape} lensMap={lensMap} />
+      ) : null}
     </span>
   )
 }
@@ -132,6 +139,7 @@ function GlassSurface({
         className={cn(
           'glass',
           VARIANT_CLASS[variant],
+          (variant === 'morphing' || variant === 'frosted') && shape === 'panel' && 'glass-panel',
           hasLens && 'glass-lens',
           pressed && 'glass-pressed',
           !shadow && 'glass-shadowless',
@@ -148,7 +156,7 @@ function GlassSurface({
        * when the surface is absent, such as a closed submenu.
        */}
       {hasLens && mounted ? (
-        <GlassFilter filterId={filterId} variant={variant} lensMap={lensMap} />
+        <GlassFilter filterId={filterId} variant={variant} shape={shape} lensMap={lensMap} />
       ) : null}
     </>
   )
@@ -222,7 +230,12 @@ function useGlassVisual({
   const filterId = `glass-${variant}-${useId().replace(/:/g, '')}`
   // Receive the glass-surface DOM through a callback ref; Presence-controlled content mounts at different times.
   const [element, setElement] = useState<HTMLElement | null>(null)
-  const lens = useGlassLens(element, { enabled: variant === 'morphing', shape })
+  const lens = useGlassLens(element, {
+    enabled: variant === 'morphing',
+    shape,
+    // Panels also bulge in the middle, so the whole surface refracts, not just the rim.
+    center: shape === 'panel' ? 0.06 : 0,
+  })
   const clamped = opacity === undefined ? undefined : Math.min(1, Math.max(0, opacity))
   const style = {
     '--glass-filter': `url(#${filterId})`,
@@ -232,7 +245,8 @@ function useGlassVisual({
 
   return {
     filterId,
-    hasLens: lens.supported,
+    // Frosted panels use only CSS blur; other existing finishes retain their SVG filters.
+    hasLens: lens.supported && !(variant === 'frosted' && shape === 'panel'),
     mounted: element !== null,
     style,
     lensMap: lens.texture,
@@ -245,16 +259,19 @@ function useGlassVisual({
 function GlassFilter({
   filterId,
   variant,
+  shape,
   lensMap,
 }: {
   filterId: string
   variant: GlassVariant
+  shape: GlassShape
   lensMap?: GlassLensTexture
 }) {
   const isBlur = variant === 'blur'
   const isFrosted = variant === 'frosted'
   const isFade = variant === 'fade'
   const isMorphing = variant === 'morphing'
+  const isPanel = isMorphing && shape === 'panel'
 
   return (
     <svg aria-hidden="true" className="absolute size-0">
@@ -305,14 +322,16 @@ function GlassFilter({
         <feDisplacementMap
           in="SourceGraphic"
           in2="soft"
-          scale={isMorphing ? (lensMap?.scale ?? 0) : isBlur ? 28 : isFade ? 6 : 10}
+          scale={
+            isMorphing ? (lensMap?.scale ?? 0) * (isPanel ? 3 : 1) : isBlur ? 28 : isFade ? 6 : 10
+          }
           xChannelSelector="R"
           yChannelSelector="G"
           result="refracted"
         />
         <feGaussianBlur
           in="refracted"
-          stdDeviation={isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
+          stdDeviation={isPanel ? '18' : isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
           result="frosted"
         />
         <feColorMatrix
