@@ -40,7 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ## Page transitions
 
-`page-transition` adds native app-style drill, sheet, and slide motion without replacing the router. The engine is [`@ssgoi/react`](https://ssgoi.dev) (`^7.5.0-beta.2`, published under the `beta` tag), wrapped in neutral names: `PageTransition` (provider), `AppScreen` and `AppGroupLayout` (the page and group boundaries), `routeFramework` (how the engine reads your router), and `PageBoundary` (a keyed boundary for router-less demos).
+`page-transition` adds native app-style drill, sheet, and slide motion without replacing the router. The engine is [`@ssgoi/react`](https://ssgoi.dev) (`^7.5.0`), wrapped in neutral names: `PageTransition` (provider), `AppScreen` and `AppGroupLayout` (the page and group boundaries), `routeFramework` (how the engine reads your router), and `PageBoundary` (a keyed boundary for router-less demos).
 
 `comwit-ui add page-transition` (and `add app-shell`) detects the router in `package.json` and installs a `route-boundary.tsx` variant that exports `routeFramework`: Next.js App Router, React Router, TanStack Router, or generic (`RoutePathProvider` supplies the path). Use `--router <name>` to override. Variant source lives in `src/routers/route-boundary.<variant>.tsx`. `AppShell` passes `routeFramework` to `PageTransition` for you.
 
@@ -108,7 +108,7 @@ Rules (`on/except`, `from/to`, `ordered`), preset options, scroll restoration, a
 - **`AppScreen` without `bar` no longer renders a tab bar — add `bar="tab"`.** `bar` is optional: omitted means no app bar and no safe-area spacing (the boundary only). `bar="none"` and `bar={false}` are gone; omit `bar` instead. `DetailScreen` is unchanged (`variant="back" | "sheet"`).
 - Pages render `AppScreen`/`DetailScreen` and route-group layouts render `AppGroupLayout` (or `TabShell`). `AppShell` no longer creates a boundary, and both need the `framework` that `AppShell` (or `PageTransition framework={routeFramework}`) provides.
 - Removed: `resolveAppBoundary`, `AppBoundaryName`, `segmentsToPath`, `RouteLocation`, and the `resolve`/`routeKey`/`path` props of the router `RouteBoundary` (now an unkeyed boundary).
-- Requires `@ssgoi/react` `^7.5.0-beta.2` (npm `beta` tag).
+- Requires `@ssgoi/react` `^7.5.0` (`SsgoiPageBoundary` ships in 7.5.0).
 
 ## Bottom sheets
 

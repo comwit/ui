@@ -3,14 +3,18 @@ export const specs = [
     title: 'PageTransition',
     slug: 'page-transition',
     covers: ['page-transition'],
-    // A state value stands in for the router. The contract is one keyed boundary: `path` is both the
-    // React key and the route id, so whatever changes it (useState here, RouteBoundary reading your
-    // router in an app) unmounts the old page and the engine animates the swap.
+    // A state value stands in for the router. Router-less demos use the keyed PageBoundary: `path` is both
+    // the React key and the route id, so whatever changes it unmounts the old page and the engine animates
+    // the swap. The Tabs story shows the app structure instead: unkeyed boundaries (AppGroupLayout for the
+    // group, RouteBoundary/AppScreen for the page) under a PageTransition that reads the route through
+    // routeFramework. In an app the router supplies the path; here RoutePathProvider does.
     imports: [
       {
         from: '@comwit/ui-templates/page-transition',
         names: ['PageTransition', 'PageBoundary', 'drill', 'sheet', 'zoom', 'slide'],
       },
+      { from: '@comwit/ui-templates/route-boundary', names: ['RouteBoundary', 'RoutePathProvider', 'routeFramework'] },
+      { from: '@comwit/ui-templates/app-group-layout', names: ['AppGroupLayout'] },
       {
         from: '@comwit/ui-templates/app-bar',
         names: ['AppBar', 'AppBarActions', 'AppBarBackButton', 'AppBarTitle'],
@@ -188,7 +192,7 @@ return (
       {
         name: 'Tabs',
         description:
-          'A persistent shell: the outer boundary keeps a fixed routeKey so the bottom nav survives, and the inner boundary swaps the page. The app bar belongs to the page, so it slides with it, and nothing sits above the inner boundary, so the leaving page stays exactly where it was. ordered + slide(): the tab order decides the direction.',
+          'The app structure: PageTransition holds the provider and routeFramework, AppGroupLayout is the tab group boundary with the bottom nav inside it, and each page is its own unkeyed boundary (RouteBoundary here, AppScreen in an app). Tab → tab swaps only the page, so the nav stays put; the app bar belongs to the page and slides with it. Nothing is forced to remount: with a router that keeps routes alive, Back restores the page state. Without a router the page is keyed by path so a tab change replaces it. ordered + slide(): the tab order decides the direction.',
         renderFn: `const TABS = [
   { value: '/home', label: 'Home', icon: <HouseIcon /> },
   { value: '/explore', label: 'Explore', icon: <CompassIcon /> },
@@ -198,24 +202,26 @@ const [tab, setTab] = React.useState('/home')
 const current = TABS.find((t) => t.value === tab) ?? TABS[0]
 return (
   <div className="relative z-0 h-96 w-full max-w-sm overflow-x-clip overflow-y-auto rounded-card bg-muted">
-    <PageTransition config={transitions} className="flex min-h-full flex-col">
-      <PageBoundary path={tab} routeKey="tabs" className="flex min-h-full flex-1 flex-col bg-background">
-        <PageBoundary path={tab} className="flex-1 bg-background">
-          <AppBar behavior="flow">
-            <AppBarTitle size="lg">{current.label}</AppBarTitle>
-          </AppBar>
-          <div className="space-y-3 px-4 pb-4">
-            {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="h-16 rounded-control bg-muted" />
+    <PageTransition config={transitions} framework={routeFramework} className="flex min-h-full flex-col">
+      <RoutePathProvider path={tab}>
+        <AppGroupLayout className="flex-1">
+          <RouteBoundary key={tab} className="flex flex-1 flex-col bg-background">
+            <AppBar behavior="flow">
+              <AppBarTitle size="lg">{current.label}</AppBarTitle>
+            </AppBar>
+            <div className="space-y-3 px-4 pb-4">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="h-16 rounded-control bg-muted" />
+              ))}
+            </div>
+          </RouteBoundary>
+          <BottomNav value={tab} onValueChange={setTab}>
+            {TABS.map((t) => (
+              <BottomNavItem key={t.value} value={t.value} label={t.label} icon={t.icon} />
             ))}
-          </div>
-        </PageBoundary>
-        <BottomNav value={tab} onValueChange={setTab}>
-          {TABS.map((t) => (
-            <BottomNavItem key={t.value} value={t.value} label={t.label} icon={t.icon} />
-          ))}
-        </BottomNav>
-      </PageBoundary>
+          </BottomNav>
+        </AppGroupLayout>
+      </RoutePathProvider>
     </PageTransition>
   </div>
 )`,

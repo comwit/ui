@@ -202,8 +202,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@ssgoi/react':
-        specifier: ^7.5.0-beta.2
-        version: 7.5.0-beta.2(@tanstack/react-router@1.170.39(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(next@16.2.7(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react-router@8.4.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
+        specifier: ^7.5.0
+        version: 7.5.0(@tanstack/react-router@1.170.39(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(next@16.2.7(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react-router@8.4.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1176,12 +1176,12 @@ packages:
     resolution: {integrity: sha512-9oUS23ebDfbl8ED6CANdQ3qqBc/xhrQvzhQAv61oN391FvNRww6RzdUbo97NEXaMm7lNEQsTjdE3zqtgiMv/eQ==}
     engines: {node: '>=20.9.0'}
 
-  '@ssgoi/core@7.5.0-beta.2':
-    resolution: {integrity: sha512-M+EcoAHwSuUle+NmBUxV/2lwDbHcKYFBpbVLUXl8gfWRwB7Y4tkw0oXVJi3qSnB2CMMPqKaaRq4a1SU753WJFA==}
+  '@ssgoi/core@7.5.0':
+    resolution: {integrity: sha512-H62KSHDzYath4TfLtmsoDP62OIAwEi8qaHPuQYJSWPYqpiBT1dRsj2gPA4x1PXKrtoA8OFcs1McWfJtgI8fBEw==}
     engines: {node: '>=18.0.0'}
 
-  '@ssgoi/react@7.5.0-beta.2':
-    resolution: {integrity: sha512-XP7wWkewDITlmYK7Rk5FifZ5YiScJqg59MGoGwaUFUF98DFHnzzMJnaJpjfHKNzPBrETi78budo72vl4t31LZg==}
+  '@ssgoi/react@7.5.0':
+    resolution: {integrity: sha512-Jw5exRdv9HHFwsXgqHmlA62NUjATS4ipVYoLuw0sqXbAZIQeP+d8lLdhumRgIjWyQtMp+tuAgEkIHiZXoY2y4g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@remix-run/react': '*'
@@ -3566,12 +3566,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@ssgoi/core@7.5.0-beta.2': {}
+  '@ssgoi/core@7.5.0': {}
 
-  '@ssgoi/react@7.5.0-beta.2(@tanstack/react-router@1.170.39(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(next@16.2.7(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react-router@8.4.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+  '@ssgoi/react@7.5.0(@tanstack/react-router@1.170.39(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(next@16.2.7(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react-router@8.4.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@babel/core': 7.29.7
-      '@ssgoi/core': 7.5.0-beta.2
+      '@ssgoi/core': 7.5.0
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       unplugin: 2.3.11

@@ -255,25 +255,12 @@ function detectPM(cwd) {
   return 'npm'
 }
 // Do not re-add dependencies already declared in package.json, which would replace consumer version pins with newer ranges.
-// Registry versions (index.json) are ranges the latest dist-tag doesn't satisfy, such as a prerelease; install
-// those as name@range, and point out an existing declaration that may be too old.
 function installDeps(wanted, cwd, { dry }) {
   const declared = projectDeps(cwd)
-  const versions = loadIndex().versions ?? {}
-  for (const name of wanted) {
-    if (name in declared && versions[name] && declared[name] !== versions[name])
-      log(
-        c.yellow('  • ') +
-          `${name} is already declared as ${declared[name]}; these components need ${versions[name]}.`
-      )
-  }
-  const deps = wanted
-    .filter((name) => !(name in declared))
-    .map((name) => (versions[name] ? `${name}@${versions[name]}` : name))
+  const deps = wanted.filter((name) => !(name in declared))
   if (!deps.length) return
   const pm = detectPM(cwd)
-  const quoted = deps.map((spec) => (spec.includes('^') || spec.includes('~') ? `"${spec}"` : spec))
-  const cmd = pm === 'npm' ? `npm install ${quoted.join(' ')}` : `${pm} add ${quoted.join(' ')}`
+  const cmd = pm === 'npm' ? `npm install ${deps.join(' ')}` : `${pm} add ${deps.join(' ')}`
   log(c.dim(`  $ ${cmd}`))
   if (dry) return
   try {

@@ -35,17 +35,6 @@ const EXTRA_REGISTRY_DEPS = {
   'app-group-layout': ['page-transition'],
 }
 
-// npm ranges the CLI must install explicitly. A bare `pnpm add <name>` resolves the latest dist-tag, which
-// does not satisfy a prerelease range (e.g. @ssgoi/react ^7.5.0-beta.2 while latest is 7.4.x). Read from
-// templates/package.json so the template source and the installed version cannot drift.
-const templatesPkg = JSON.parse(
-  readFileSync(join(here, '..', '..', 'templates', 'package.json'), 'utf8')
-)
-const PINNED_VERSIONS = Object.fromEntries(
-  Object.entries(templatesPkg.dependencies ?? {}).filter(
-    ([, range]) => !range.startsWith('workspace:') && range.includes('-')
-  )
-)
 
 function pkgName(spec) {
   if (spec.startsWith('@')) return spec.split('/').slice(0, 2).join('/')
@@ -243,8 +232,6 @@ for (const it of items) {
 const index = {
   name: 'comwit',
   homepage: 'https://github.com/burrr-ai/comwit',
-  // Ranges comwit-ui add passes to the package manager instead of a bare name.
-  versions: PINNED_VERSIONS,
   items: items.map(({ files, variants, ...meta }) =>
     variants ? { ...meta, variants: Object.keys(variants) } : meta
   ),
