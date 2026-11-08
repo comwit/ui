@@ -206,7 +206,7 @@ function OverlayPanelPreview() {
                         <p className="text-title-sm capitalize">{variant}</p>
                         <p className="mt-1 text-caption">
                           {variant === 'morphing'
-                            ? 'Light film · blurred backdrop · rim and center refraction'
+                            ? 'Heavy blur · strong rim and center refraction'
                             : 'Dense film · soft blur'}
                         </p>
                       </div>
@@ -221,7 +221,7 @@ function OverlayPanelPreview() {
               </div>
               <p className="text-body-sm text-white">
                 {variant === 'morphing'
-                  ? 'The background stays visible. Move it to watch the rim bend and the middle magnify.'
+                  ? 'Content behind is unreadable; move it to watch the colors bend at the rim and swell in the middle.'
                   : 'Use for a quieter surface when the background is busy.'}
               </p>
             </div>

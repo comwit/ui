@@ -9,7 +9,8 @@
  * - GlassButton: circular/pill button with a glass layer by default (app-bar back/floating action).
  *
  * Variants: morphing (edge refraction, default), blur (strong blur), frosted, and fade (downward fade for app bars).
- * Morphing panels blur the backdrop like other morphing glass, refract the rim harder and bulge in the middle; frosted panels soften busy backdrops further.
+ * Morphing panels blur the backdrop heavily so content behind them stays unreadable, refract the rim hard and bulge in the middle;
+ * frosted panels trade refraction for a denser film.
  * styles.css .glass* owns all visuals; this component adds classes, CSS variables, and SVG filters.
  * @comwit/ui useGlassLens handles support detection, size tracking, and canvas displacement-map generation.
  * Enable refraction only in Chromium where it is reliable; otherwise fall back to blur.
@@ -233,7 +234,7 @@ function useGlassVisual({
     enabled: variant === 'morphing',
     shape,
     // Panels also bulge in the middle, so the whole surface refracts, not just the rim.
-    center: shape === 'panel' ? 0.05 : 0,
+    center: shape === 'panel' ? 0.06 : 0,
   })
   const clamped = opacity === undefined ? undefined : Math.min(1, Math.max(0, opacity))
   const style = {
@@ -322,7 +323,7 @@ function GlassFilter({
           in="SourceGraphic"
           in2="soft"
           scale={
-            isMorphing ? (lensMap?.scale ?? 0) * (isPanel ? 2.5 : 1) : isBlur ? 28 : isFade ? 6 : 10
+            isMorphing ? (lensMap?.scale ?? 0) * (isPanel ? 3 : 1) : isBlur ? 28 : isFade ? 6 : 10
           }
           xChannelSelector="R"
           yChannelSelector="G"
@@ -330,7 +331,7 @@ function GlassFilter({
         />
         <feGaussianBlur
           in="refracted"
-          stdDeviation={isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
+          stdDeviation={isPanel ? '18' : isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
           result="frosted"
         />
         <feColorMatrix
