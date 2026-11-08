@@ -8,14 +8,18 @@
  * NavDepth, and ScrollChrome own behavior; this layer handles composition and appearance. Edit width
  * (max-w-md), background, and spinner here. globals.css [data-slot=app-shell] owns dvh height and installed-app adjustments.
  *
- *   // Root route: wrap the routed area (Outlet) once.
+ *   // Root route: the provider only, no boundary. Wrap the routed area (Outlet) once.
  *   <AppShell tabs={APP_TABS}><Outlet /></AppShell>
- *   // Layout route for tab screens: only the body changes while the tab bar persists.
+ *   // Pathless layout route for tab screens: one group boundary around the tab pages and the tab bar.
  *   <TabShell><Outlet /></TabShell>
+ *   // Pathless layout route for details: <AppGroupLayout><Outlet /></AppGroupLayout>
+ *   // Every route page: <AppScreen …> or <DetailScreen …> at the top.
  *
- * Tab href paths share the outer boundary key, preserving the tab bar while the body slides horizontally.
- * Other paths (details) replace that boundary, enter with drill, and move the tab bar with the page.
- * Defaults to appTransitions; supply transitions to customize.
+ * AppShell holds no boundary. Boundaries are unkeyed (SSGOI SsgoiPageBoundary) and owned by the group layouts
+ * (AppGroupLayout, TabShell) and pages (AppScreen); the route change that unmounts a page or group is its OUT.
+ * Tab → tab swaps only the page while the group and its tab bar stay; tab → detail moves the whole tab group,
+ * tab bar included. Give each route its own page component (or key AppScreen by path). Defaults to
+ * appTransitions; supply transitions to customize.
  */
 
 import * as React from 'react'
@@ -29,7 +33,8 @@ import {
   type PageTransitionConfig,
 } from '../components/ui/page-transition'
 import { PullIndicator } from '../components/ui/pull-to-refresh'
-import { RouteBoundary, type RouteLocation } from './route-boundary.tanstack-router'
+import { AppGroupLayout } from '../components/ui/app-group-layout'
+import { routeFramework } from './route-boundary.tanstack-router'
 import { TabBar, type AppTab } from './tab-bar.tanstack-router'
 
 type AppShellProps = {
@@ -63,10 +68,6 @@ function AppShell({ tabs, transitions, top, onRefresh, className, children }: Ap
     [transitions, tabPaths]
   )
   const context = React.useMemo(() => ({ tabs }), [tabs])
-  const resolve = React.useCallback(
-    (location: RouteLocation) => resolveAppBoundary(location.pathname, tabPaths),
-    [tabPaths]
-  )
 
   return (
     <AppShellContext.Provider value={context}>
@@ -87,10 +88,8 @@ function AppShell({ tabs, transitions, top, onRefresh, className, children }: Ap
           <AppShellPrimitive.Root onRefresh={onRefresh} resetKey={pathname}>
             <PullIndicator />
             <AppShellPrimitive.Scroller>
-              <PageTransition config={config} className="min-h-full">
-                <RouteBoundary resolve={resolve} className="flex flex-col bg-background">
-                  {children}
-                </RouteBoundary>
+              <PageTransition config={config} framework={routeFramework} className="min-h-full">
+                {children}
               </PageTransition>
             </AppShellPrimitive.Scroller>
           </AppShellPrimitive.Root>
@@ -105,23 +104,16 @@ type TabShellProps = {
   children: React.ReactNode
 }
 
-/** Tab-screen shell: only the body boundary changes while the tab bar persists. Place in the tabs' layout route. */
+/** Tab-group layout: one group boundary (AppGroupLayout) around the tab pages and the tab bar. Place in the tabs' layout route. */
 function TabShell({ className, children }: TabShellProps) {
   const { tabs } = React.useContext(AppShellContext)
   return (
-    <>
-      <RouteBoundary className={cn('flex min-h-0 flex-1 flex-col bg-background', className)}>
-        {children}
-      </RouteBoundary>
+    <AppGroupLayout className={className}>
+      {children}
       <TabBar tabs={tabs} />
-    </>
+    </AppGroupLayout>
   )
 }
 
-/** Outer boundary ID (path) and key (DOM lifetime). Tab paths share the key to preserve the tab bar. */
-function resolveAppBoundary(pathname: string, tabPaths: readonly string[]) {
-  return { id: pathname, key: tabPaths.includes(pathname) ? 'app-tabs' : pathname }
-}
-
-export { AppShell, TabShell, resolveAppBoundary }
+export { AppShell, TabShell }
 export type { AppShellProps, TabShellProps }

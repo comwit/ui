@@ -40,24 +40,75 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 ## Page transitions
 
-`page-transition` adds native app-style drill, sheet, and slide motion without replacing the router. The engine is [`@ssgoi/react`](https://ssgoi.dev), wrapped in neutral names: `PageTransition` (provider), `PageBoundary` (route-owned DOM boundary), and `RouteBoundary` (reads the router pathname).
+`page-transition` adds native app-style drill, sheet, and slide motion without replacing the router. The engine is [`@ssgoi/react`](https://ssgoi.dev) (`^7.5.0-beta.2`, published under the `beta` tag), wrapped in neutral names: `PageTransition` (provider), `AppScreen` and `AppGroupLayout` (the page and group boundaries), `routeFramework` (how the engine reads your router), and `PageBoundary` (a keyed boundary for router-less demos).
 
-`comwit-ui add page-transition` detects the router in `package.json` and installs a `route-boundary.tsx` variant: Next.js App Router, React Router, TanStack Router, or generic with a `path` prop. Use `--router <name>` to override. Variant source lives in `src/routers/route-boundary.<variant>.tsx`.
+`comwit-ui add page-transition` (and `add app-shell`) detects the router in `package.json` and installs a `route-boundary.tsx` variant that exports `routeFramework`: Next.js App Router, React Router, TanStack Router, or generic (`RoutePathProvider` supplies the path). Use `--router <name>` to override. Variant source lives in `src/routers/route-boundary.<variant>.tsx`. `AppShell` passes `routeFramework` to `PageTransition` for you.
+
+### Where boundaries go
+
+- **The root (app) layout holds only the provider** (`AppShell`, or `PageTransition` with `framework={routeFramework}`). It renders no boundary.
+- **Every route-group layout renders `AppGroupLayout`** around its content, with persistent chrome such as the bottom tab bar **inside** it. `TabShell` is exactly that: `AppGroupLayout` plus the tab bar.
+- **Every page renders `AppScreen`** (or `DetailScreen`) as its top-most element, with no wrapper element above it. Suspense and fragments are fine. `bar="tab" | "back" | "sheet"` picks the app bar; omit `bar` for screens that own their top edge and only need the boundary (no app bar, no safe-area spacing).
+- **Intercepted `@modal` pages are not wrapped.** Keep the `{modal}` slot outside the group boundary, as a sibling; it animates by itself.
+
+```text
+app/
+  (app)/layout.tsx                    # <AppShell tabs={APP_TABS}>{children}</AppShell>, no boundary
+  (app)/(tabs)/layout.tsx             # <><TabShell>{children}</TabShell>{modal}</>
+  (app)/(tabs)/page.tsx               # <AppScreen bar="tab" title="Home">…</AppScreen>
+  (app)/(tabs)/search/page.tsx        # <AppScreen bar="tab" title="Search">…</AppScreen>
+  (app)/(tabs)/@modal/(.)posts/[id]/page.tsx  # not wrapped
+  (app)/(detail)/layout.tsx           # <AppGroupLayout>{children}</AppGroupLayout>
+  (app)/(detail)/posts/[id]/page.tsx  # <DetailScreen fallback="/">…</DetailScreen>
+```
 
 ```tsx
-// app/layout.tsx: wrap the routed area once.
+// app/(app)/(detail)/layout.tsx
+import { AppGroupLayout } from '@/components/ui/app-group-layout'
+
+export default function DetailLayout({ children }: { children: React.ReactNode }) {
+  return <AppGroupLayout>{children}</AppGroupLayout>
+}
+
+// app/(app)/(detail)/posts/[id]/page.tsx
+import { DetailScreen } from '@/components/ui/app-screen'
+
+export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return (
+    <DetailScreen fallback="/">
+      <Post id={id} />
+    </DetailScreen>
+  )
+}
+```
+
+Tab → tab swaps only the page while the group and its tab bar stay. Tab → detail moves the whole tab group, tab bar included. Detail → detail swaps the page. Back reveals the route the user left, with its state.
+
+**Why unkeyed boundaries:** with `cacheComponents`, Next.js keeps visited routes alive in React `<Activity>` instead of unmounting them, so Back restores their state. A keyed boundary (the old `RouteBoundary` with `routeKey`/`resolve`) forces a remount on every navigation and throws that state away. `AppScreen` and `AppGroupLayout` are SSGOI's `SsgoiPageBoundary`, which is never keyed: React hiding the route (`display: none !important` on its top-most host element) is the OUT, showing it again is the IN. That is why the boundary has to be the top-most element of the page or layout. Its id is the `pathname`, updated only while it is visible. Routers that unmount routes (React Router, TanStack Router, the generic shell) work the same way: give each route its own page component, or key `AppScreen` by path when one component renders several paths.
+
+Everything needs a `framework` on the provider: a page boundary throws without one. `RouteBoundary` (from `route-boundary.tsx`) is the same unkeyed boundary with page defaults, for custom screens that don't use `AppScreen`. Don't mix keyed `PageBoundary` and unkeyed boundaries in the same region.
+
+Without a router, `PageBoundary` is one DOM element whose key changes (`PageBoundary path=…`). When React unmounts the old page, the engine retains that node, places it absolutely above the new page, and animates both. This works with `useState` alone, as in the documentation phone demos:
+
+```tsx
 <PageTransition
   config={{ transitions: [{ on: '/posts/**', except: '/posts', transition: drill() }] }}
 >
-  <RouteBoundary>{children}</RouteBoundary>
+  <PageBoundary path={path}>{page}</PageBoundary>
 </PageTransition>
 ```
 
-A boundary is one DOM element whose key changes (`PageBoundary path=…`). When React unmounts the old page, the engine retains that node, places it absolutely above the new page, and animates both. This also works with `useState` and no router, as in the documentation phone demos.
-
-Keep the app bar inside the page boundary so it moves with the page. For a persistent tab bar, fix the outer `RouteBoundary`'s `routeKey` and change pages in an inner boundary, leaving the tab bar in the outer shell. If other chrome appears above the inner boundary, wrap it in a `relative` parent: exiting pages align to the nearest positioned ancestor's top edge. For `hero()`, add matching `data-hero-exit-key` / `data-hero-enter-key` and `data-hero-radius` to shared elements.
+Keep the app bar inside the page boundary so it moves with the page; `AppScreen` does this. If other chrome appears above a boundary, wrap it in a `relative` parent: exiting pages align to the nearest positioned ancestor's top edge. For `hero()`, add matching `data-hero-exit-key` / `data-hero-enter-key` and `data-hero-radius` to shared elements.
 
 Rules (`on/except`, `from/to`, `ordered`), preset options, scroll restoration, and troubleshooting follow the [engine documentation](https://ssgoi.dev/docs). Configuration is the same; wrapper component names differ.
+
+### Upgrading to 0.8.0
+
+- **`AppScreen` without `bar` no longer renders a tab bar — add `bar="tab"`.** `bar` is optional: omitted means no app bar and no safe-area spacing (the boundary only). `bar="none"` and `bar={false}` are gone; omit `bar` instead. `DetailScreen` is unchanged (`variant="back" | "sheet"`).
+- Pages render `AppScreen`/`DetailScreen` and route-group layouts render `AppGroupLayout` (or `TabShell`). `AppShell` no longer creates a boundary, and both need the `framework` that `AppShell` (or `PageTransition framework={routeFramework}`) provides.
+- Removed: `resolveAppBoundary`, `AppBoundaryName`, `segmentsToPath`, `RouteLocation`, and the `resolve`/`routeKey`/`path` props of the router `RouteBoundary` (now an unkeyed boundary).
+- Requires `@ssgoi/react` `^7.5.0-beta.2` (npm `beta` tag).
 
 ## Bottom sheets
 
@@ -121,7 +172,7 @@ Behavior, accessibility, IME, focus, and calendar/time logic live in `@comwit/ui
 
 The same groups as the documentation gallery, with specialized Comwit experiences first:
 
-- **Mobile apps:** app-shell (`AppShell`, `TabShell`, tab-bar, and route-boundary with router variants), app-screen, app-bar, bottom-nav, page-transition, pull-to-refresh, drag-scroller.
+- **Mobile apps:** app-shell (`AppShell`, `TabShell`, tab-bar, and route-boundary with router variants), app-screen (`AppScreen`, `DetailScreen`), app-group-layout (`AppGroupLayout`), app-bar, bottom-nav, page-transition, pull-to-refresh, drag-scroller.
 - **Chat:** `Chat`, `ChatHeader`, virtualized `ChatMessages`, `ChatMessage`, `ChatBubble`, `ChatTyping`, `ChatComposer`, and related parts.
 - **Glass:** `Glass`, `GlassSurface`, `GlassButton`, dropdown-menu, popover. Dialogs, sheets, popups, and toasts use the same refractive glass with dense tint above scrims.
 - **Feedback:** toast (`Toaster`, `toast()`, `Toast`), `lib/popup` (confirm, alert, sheet), alert, empty-state.

@@ -8,17 +8,20 @@
  * NavDepth, and ScrollChrome own behavior; this layer handles composition and appearance. Edit width
  * (max-w-md), background, and spinner here. globals.css [data-slot=app-shell] owns dvh height and installed-app adjustments.
  *
- *   // Client shell in the (app) layout: wrap the routed area once.
+ *   // (app)/layout.tsx: the provider only, no boundary.
  *   <AppShell tabs={APP_TABS} top={<InstallBanner />}>{children}</AppShell>
- *   // (top-level)/layout.tsx: tab screens; only the body changes while the tab bar persists.
- *   <TabShell>{children}</TabShell>
- *   // (detail)/layout.tsx: fullscreen details; render children directly.
+ *   // (app)/(tabs)/layout.tsx: one group boundary around the tab pages and the tab bar; {modal} outside it.
+ *   <><TabShell>{children}</TabShell>{modal}</>
+ *   // (app)/(detail)/layout.tsx: fullscreen details.
+ *   <AppGroupLayout>{children}</AppGroupLayout>
+ *   // Every page: <AppScreen …> or <DetailScreen …> at the top. Intercepted @modal pages are not wrapped.
  *
- * Boundary IDs are public URLs derived from the layout's children-slot segments, with route groups and
- * interception markers removed. During @modal interception, the background slot stays unchanged even when
- * the browser URL changes. Tab href paths share the outer boundary key, keeping the tab bar while the
- * body slides horizontally. Other paths (details) replace that boundary, enter with drill, and move the
- * tab bar with the page. Defaults to appTransitions (tab axis + drill); supply transitions to customize.
+ * AppShell holds no boundary. Boundaries are unkeyed (SSGOI SsgoiPageBoundary) and owned by the group layouts
+ * (AppGroupLayout, TabShell) and pages (AppScreen): with cacheComponents, Next.js keeps visited routes alive in
+ * React <Activity>, so hiding a route is the OUT and showing it is the IN, and Back restores its state because
+ * nothing forces a remount. Tab → tab swaps only the page while the group and its tab bar stay; tab → detail
+ * moves the whole tab group, tab bar included. Defaults to appTransitions (tab axis + drill); supply transitions
+ * to customize.
  */
 
 import * as React from 'react'
@@ -32,7 +35,8 @@ import {
   type PageTransitionConfig,
 } from '../components/ui/page-transition'
 import { PullIndicator } from '../components/ui/pull-to-refresh'
-import { RouteBoundary, segmentsToPath, type RouteLocation } from './route-boundary.nextjs'
+import { AppGroupLayout } from '../components/ui/app-group-layout'
+import { routeFramework } from './route-boundary.nextjs'
 import { TabBar, type AppTab } from './tab-bar.nextjs'
 
 type AppShellProps = {
@@ -62,10 +66,6 @@ function AppShell({ tabs, transitions, top, onRefresh, className, children }: Ap
     [transitions, tabPaths]
   )
   const context = React.useMemo(() => ({ tabs }), [tabs])
-  const resolve = React.useCallback(
-    (location: RouteLocation) => resolveAppBoundary('app-shell', location, tabPaths),
-    [tabPaths]
-  )
 
   return (
     <AppShellContext.Provider value={context}>
@@ -88,14 +88,8 @@ function AppShell({ tabs, transitions, top, onRefresh, className, children }: Ap
             </React.Suspense>
             <PullIndicator />
             <AppShellPrimitive.Scroller>
-              <PageTransition config={config} className="min-h-full">
-                <RouteBoundary
-                  resolve={resolve}
-                  className="flex flex-col bg-background"
-                  fallback={<div className="flex-1 bg-background" aria-hidden="true" />}
-                >
-                  {children}
-                </RouteBoundary>
+              <PageTransition config={config} framework={routeFramework} className="min-h-full">
+                {children}
               </PageTransition>
             </AppShellPrimitive.Scroller>
           </AppShellPrimitive.Root>
@@ -120,41 +114,19 @@ type TabShellProps = {
   children: React.ReactNode
 }
 
-/** Tab-screen shell: only the main-content body boundary changes while the tab bar persists. Place in the (top-level) layout. */
+/**
+ * Tab-group layout: one group boundary (AppGroupLayout) around the tab pages and the tab bar. Place in the
+ * (tabs) layout; keep its {modal} slot outside as a sibling.
+ */
 function TabShell({ className, children }: TabShellProps) {
   const { tabs } = React.useContext(AppShellContext)
   return (
-    <>
-      <RouteBoundary
-        resolve={resolveMainContent}
-        className={cn('flex min-h-0 flex-1 flex-col bg-background', className)}
-        fallback={<div className="flex-1 bg-background" aria-hidden="true" />}
-      >
-        {children}
-      </RouteBoundary>
+    <AppGroupLayout className={className}>
+      {children}
       <TabBar tabs={tabs} />
-    </>
+    </AppGroupLayout>
   )
 }
 
-export type AppBoundaryName = 'app-shell' | 'main-content'
-
-/**
- * Boundary ID (logical path) and key (DOM lifetime). Tab paths share the app-shell boundary key to preserve
- * the tab bar. Pass this as RouteBoundary resolve when composing your own shell.
- */
-function resolveAppBoundary(
-  name: AppBoundaryName,
-  { selectedSegments }: RouteLocation,
-  tabPaths: readonly string[]
-) {
-  const id = segmentsToPath(selectedSegments)
-  const keepTabs = name === 'app-shell' && tabPaths.includes(id)
-  return { id, key: keepTabs ? 'app-tabs' : id }
-}
-
-const resolveMainContent = (location: RouteLocation) =>
-  resolveAppBoundary('main-content', location, [])
-
-export { AppShell, TabShell, resolveAppBoundary }
+export { AppShell, TabShell }
 export type { AppShellProps, TabShellProps }
