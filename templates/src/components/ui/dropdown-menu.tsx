@@ -31,7 +31,7 @@ function DropdownMenuContent({
   glassVariant = 'morphing',
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
-  /** Transparent edge refraction (default) or a denser, softly blurred panel. */
+  /** Blurred backdrop with edge refraction (default) or a denser, frosted panel. */
   glassVariant?: GlassPanelVariant
 }) {
   return (

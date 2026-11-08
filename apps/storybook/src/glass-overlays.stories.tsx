@@ -206,7 +206,7 @@ function OverlayPanelPreview() {
                         <p className="text-title-sm capitalize">{variant}</p>
                         <p className="mt-1 text-caption">
                           {variant === 'morphing'
-                            ? 'Transparent · strong edge refraction · light blur'
+                            ? 'Light film · blurred backdrop · doubled edge refraction'
                             : 'Dense film · soft blur'}
                         </p>
                       </div>

@@ -9,7 +9,7 @@
  * - GlassButton: circular/pill button with a glass layer by default (app-bar back/floating action).
  *
  * Variants: morphing (edge refraction, default), blur (strong blur), frosted, and fade (downward fade for app bars).
- * Morphing panels stay transparent with light blur and pronounced edge refraction; frosted panels soften busy backdrops.
+ * Morphing panels blur the backdrop like other morphing glass with doubled edge refraction; frosted panels soften busy backdrops further.
  * styles.css .glass* owns all visuals; this component adds classes, CSS variables, and SVG filters.
  * @comwit/ui useGlassLens handles support detection, size tracking, and canvas displacement-map generation.
  * Enable refraction only in Chromium where it is reliable; otherwise fall back to blur.
@@ -325,13 +325,13 @@ function GlassFilter({
         />
         <feGaussianBlur
           in="refracted"
-          stdDeviation={isPanel ? '1' : isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
+          stdDeviation={isBlur ? '9.5' : isFade ? '2.5' : isFrosted ? '5.5' : '4'}
           result="frosted"
         />
         <feColorMatrix
           in="frosted"
           type="saturate"
-          values={isPanel ? '0.65' : isBlur ? '1.9' : isFade ? '1.25' : isFrosted ? '1.35' : '1.55'}
+          values={isBlur ? '1.9' : isFade ? '1.25' : isFrosted ? '1.35' : '1.55'}
         />
       </filter>
     </svg>
