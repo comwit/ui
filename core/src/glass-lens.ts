@@ -8,6 +8,7 @@
  * at the element's size, only when that size changes. The consumer owns SVG filter markup and visual settings such as blur and saturation.
  *
  *   const lens = useGlassLens(element, { enabled: variant === 'morphing', shape: 'pill' })
+ *   const panel = useGlassLens(element, { shape: 'panel', center: 0.05 }) // Also magnify the middle like a convex lens.
  *   lens.supported  // Whether this browser can enable the lens.
  *   lens.texture    // { url, width, height, scale } — pass to feImage and feDisplacementMap scale.
  */
@@ -30,7 +31,16 @@ function useGlassLensSupport() {
 /** Regenerate the lens map only when dimensions change. Scrolling and movement incur no capture cost. */
 function useGlassLens(
   element: HTMLElement | null,
-  { enabled = true, shape = 'pill' }: { enabled?: boolean; shape?: GlassLensShape } = {}
+  {
+    enabled = true,
+    shape = 'pill',
+    center = 0,
+  }: {
+    enabled?: boolean
+    shape?: GlassLensShape
+    /** Convex bulge inside the rim, as a fraction of the half size (0 keeps the middle fixed; ~0.05 is subtle). */
+    center?: number
+  } = {}
 ) {
   const supported = useGlassLensSupport()
   const active = supported && enabled
@@ -42,7 +52,7 @@ function useGlassLens(
       const width = element.offsetWidth
       const height = element.offsetHeight
       if (width === 0 || height === 0) return
-      const map = createLensMap(width, height, shape)
+      const map = createLensMap(width, height, shape, center)
       const canvas = document.createElement('canvas')
       canvas.width = map.width
       canvas.height = map.height
@@ -55,12 +65,12 @@ function useGlassLens(
     const observer = new ResizeObserver(update)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [element, active, shape])
+  }, [element, active, shape, center])
 
   return { supported, texture: active ? texture : undefined }
 }
 
-/** Refract the edges symmetrically; the center and pixels outside the lens stay fixed. */
+/** Refract the edges symmetrically; pixels outside the lens stay fixed. */
 function lensDisplacement(x: number, y: number, width: number, height: number, radius: number) {
   const px = x - width / 2
   const py = y - height / 2
@@ -80,24 +90,36 @@ function lensDisplacement(x: number, y: number, width: number, height: number, r
   }
 }
 
+/**
+ * Convex bulge: sample toward the middle so the backdrop is magnified there. The falloff (1 - r²) reaches zero at the
+ * lens edge, so it fades into the rim bend instead of adding to it, and its slope stays well below 1 (no folding).
+ */
+function centerDisplacement(x: number, y: number, width: number, height: number, center: number) {
+  if (center <= 0) return { x: 0, y: 0 }
+  const px = x - width / 2
+  const py = y - height / 2
+  const falloff = Math.max(0, 1 - (px / (width / 2)) ** 2 - (py / (height / 2)) ** 2)
+  return { x: -px * center * falloff, y: -py * center * falloff }
+}
+
 /** A small displacement map generated from the shape alone. No page, remote image, or frame capture. */
-function createLensMap(width: number, height: number, shape: GlassLensShape) {
+function createLensMap(width: number, height: number, shape: GlassLensShape, center = 0) {
   const radius =
     shape === 'panel' ? Math.min(16, width / 2, height / 2) : Math.min(width, height) / 2
   const ratio = Math.min(1, 256 / Math.max(width, height))
   const mapWidth = Math.max(1, Math.ceil(width * ratio))
   const mapHeight = Math.max(1, Math.ceil(height * ratio))
-  const strength = Math.min(radius, 18) * 0.3125
+  // The bulge peaks at 2/(3√3) of the half size; widen the encoded range so it never clips.
+  const bulge = Math.max(0, center) * (2 / (3 * Math.sqrt(3))) * (Math.max(width, height) / 2)
+  const strength = Math.max(Math.min(radius, 18) * 0.3125, bulge)
   const pixels = new Uint8ClampedArray(mapWidth * mapHeight * 4)
   for (let y = 0; y < mapHeight; y += 1) {
     for (let x = 0; x < mapWidth; x += 1) {
-      const shift = lensDisplacement(
-        ((x + 0.5) * width) / mapWidth,
-        ((y + 0.5) * height) / mapHeight,
-        width,
-        height,
-        radius
-      )
+      const sx = ((x + 0.5) * width) / mapWidth
+      const sy = ((y + 0.5) * height) / mapHeight
+      const rim = lensDisplacement(sx, sy, width, height, radius)
+      const dome = centerDisplacement(sx, sy, width, height, center)
+      const shift = { x: rim.x + dome.x, y: rim.y + dome.y }
       const index = (y * mapWidth + x) * 4
       pixels[index] = 128 + Math.round((127 * shift.x) / strength)
       pixels[index + 1] = 128 + Math.round((127 * shift.y) / strength)
