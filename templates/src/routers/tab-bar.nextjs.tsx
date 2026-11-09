@@ -13,6 +13,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { cn } from '../lib/utils'
 import { BottomNav, BottomNavItem } from '../components/ui/bottom-nav'
 
 export type AppTab = {
@@ -26,10 +27,11 @@ type TabBarProps = Omit<React.ComponentProps<typeof BottomNav>, 'value' | 'child
   tabs: readonly AppTab[]
 }
 
-function TabBar({ tabs, ...props }: TabBarProps) {
+function TabBar({ tabs, className, ...props }: TabBarProps) {
   return (
-    <React.Suspense fallback={<TabBarPlaceholder />}>
-      <ActiveTabBar tabs={tabs} {...props} />
+    // The placeholder shares className so layout classes (TabShell's mt-auto) hold while the path resolves.
+    <React.Suspense fallback={<TabBarPlaceholder className={className} />}>
+      <ActiveTabBar tabs={tabs} className={className} {...props} />
     </React.Suspense>
   )
 }
@@ -55,10 +57,13 @@ function ActiveTabBar({ tabs, showLabels = true, ...props }: TabBarProps) {
 }
 
 /** Preserve tab-bar height before the path is resolved, including static shell prerendering. */
-function TabBarPlaceholder() {
+function TabBarPlaceholder({ className }: { className?: string }) {
   return (
     <div
-      className="box-content h-14 shrink-0 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))]"
+      className={cn(
+        'box-content h-14 shrink-0 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))]',
+        className
+      )}
       aria-hidden="true"
     />
   )
