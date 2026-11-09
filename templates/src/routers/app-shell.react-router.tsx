@@ -104,13 +104,20 @@ type TabShellProps = {
   children: React.ReactNode
 }
 
-/** Tab-group layout: one group boundary (AppGroupLayout) around the tab pages and the tab bar. Place in the tabs' layout route. */
+/**
+ * Tab-group layout: one group boundary (AppGroupLayout) around the tab pages and the tab bar. Place in the tabs' layout route.
+ *
+ * mt-auto pins the bar to the group's bottom instead of relying on the page's height: during a tab → tab
+ * transition the exiting page leaves the flow (absolute) before the entering page fills it, and a sticky
+ * bottom-0 bar whose containing block shrank to its own height would ride to the top of the group. The group
+ * keeps the scroller's height (min-h-full), so mt-auto holds the bar at the viewport bottom through that frame.
+ */
 function TabShell({ className, children }: TabShellProps) {
   const { tabs } = React.useContext(AppShellContext)
   return (
     <AppGroupLayout className={className}>
       {children}
-      <TabBar tabs={tabs} />
+      <TabBar tabs={tabs} className="mt-auto" />
     </AppGroupLayout>
   )
 }
