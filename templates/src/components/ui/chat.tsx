@@ -177,7 +177,7 @@ function ChatScrollToBottom({ className, labels, ...props }: ChatScrollToBottomP
             aria-label={pill ? undefined : text.scrollToBottom}
             data-slot="chat-scroll-to-bottom"
             className={cn(
-              'absolute bottom-3 left-1/2 z-raised -translate-x-1/2 animate-in fade-in-0 slide-in-from-bottom-2 duration-base',
+              'absolute bottom-3 left-1/2 z-raised -translate-x-1/2 animate-in slide-in-from-bottom-2 duration-base',
               pill ? 'h-9 px-3.5' : 'size-10',
               className
             )}

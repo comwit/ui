@@ -1168,6 +1168,85 @@
 .comwit-toaster[data-sonner-toaster]
   [data-sonner-toast][data-expanded='false'][data-front='false']
   [data-slot='toast']
+  > *,
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-mounted='false']
+  [data-slot='toast']
+  > *,
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-removed='true']
+  [data-slot='toast']
   > * {
   opacity: 0;
+}
+/*
+ * The li above our glass surface must stay opaque: opacity on an ancestor cuts off the backdrop. Sonner fades it on
+ * mount, removal, overflow, and swipe-out (keyframes), and only !important outranks those keyframes. Toasts travel
+ * fully off screen instead, because Sonner unmounts a removed toast after 200ms.
+ */
+.comwit-toaster[data-sonner-toaster] [data-sonner-toast] {
+  opacity: 1 !important;
+}
+.comwit-toaster[data-sonner-toaster] [data-sonner-toast][data-visible='false'] {
+  visibility: hidden;
+}
+.comwit-toaster[data-sonner-toaster] [data-sonner-toast][data-mounted='false'] {
+  --y: translateY(calc(var(--lift) * (-100% - 96px)));
+}
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-removed='true'][data-swipe-out='false'] {
+  --y: translateY(calc(var(--lift) * (-100% - 96px)));
+  transition: transform 200ms ease-in;
+}
+
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-swipe-out='true'][data-swipe-direction='left'] {
+  animation-name: comwit-toast-swipe-out-left;
+}
+@keyframes comwit-toast-swipe-out-left {
+  from {
+    transform: var(--y) translateX(var(--swipe-amount-x));
+  }
+  to {
+    transform: var(--y) translateX(calc(var(--swipe-amount-x) - 100% - 48px));
+  }
+}
+
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-swipe-out='true'][data-swipe-direction='right'] {
+  animation-name: comwit-toast-swipe-out-right;
+}
+@keyframes comwit-toast-swipe-out-right {
+  from {
+    transform: var(--y) translateX(var(--swipe-amount-x));
+  }
+  to {
+    transform: var(--y) translateX(calc(var(--swipe-amount-x) + 100% + 48px));
+  }
+}
+
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-swipe-out='true'][data-swipe-direction='up'] {
+  animation-name: comwit-toast-swipe-out-up;
+}
+@keyframes comwit-toast-swipe-out-up {
+  from {
+    transform: var(--y) translateY(var(--swipe-amount-y));
+  }
+  to {
+    transform: var(--y) translateY(calc(var(--swipe-amount-y) - 100% - 96px));
+  }
+}
+
+.comwit-toaster[data-sonner-toaster]
+  [data-sonner-toast][data-swipe-out='true'][data-swipe-direction='down'] {
+  animation-name: comwit-toast-swipe-out-down;
+}
+@keyframes comwit-toast-swipe-out-down {
+  from {
+    transform: var(--y) translateY(var(--swipe-amount-y));
+  }
+  to {
+    transform: var(--y) translateY(calc(var(--swipe-amount-y) + 100% + 96px));
+  }
 }

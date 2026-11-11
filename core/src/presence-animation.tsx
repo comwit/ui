@@ -9,7 +9,8 @@
  *
  *   const ref = usePresenceAnimation<HTMLDivElement>({
  *     // Progress t: 0 = closed, 1 = open. The spring moves t; each frame's style becomes a keyframe.
- *     style: (t) => ({ opacity: t, transform: `scale(${0.6 + 0.4 * t})` }),
+ *     // Glass parts animate transform only: opacity on a backdrop-filter element or its ancestor removes the blur.
+ *     style: (t) => ({ transform: `scale(${0.9 + 0.1 * t})` }),
  *     enter: { duration: 0.28, bounce: 0.1 },
  *     exit: { duration: 0.2 },
  *   })

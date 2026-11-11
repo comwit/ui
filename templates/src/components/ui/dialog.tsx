@@ -67,7 +67,7 @@ function DialogContent({
           {...props}
           asChild
         >
-          {/* Enter by growing from scale 0.9, and exit along the same path using lib/overlay-motion. */}
+          {/* Enter by growing from scale 0.94, and exit along the same path using lib/overlay-motion. */}
           <OverlayMotion preset="dialog">
             {children}
             {showCloseButton && (
