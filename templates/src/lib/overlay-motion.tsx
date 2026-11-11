@@ -12,14 +12,21 @@
  *     <OverlayMotion preset="menu">{children}</OverlayMotion>
  *   </PopoverPrimitive.Content>
  *
- * - menu: dropdowns, popovers, selects. Grows from scale 0.6 at the trigger transform-origin, translating 0.5rem
+ * - menu: dropdowns, popovers, selects. Grows from scale 0.9 at the trigger transform-origin, translating 0.5rem
  *   from the side opposite data-side. Slight bounce; exits along the same path.
- * - dialog: centered dialog, growing from scale 0.9.
+ * - dialog: centered dialog, growing from scale 0.94.
  * - sheet: travels its full size (100%) toward the attached side. No bounce, to stay flush with the edge.
- * - scrim: overlay opacity only.
+ * - scrim: overlay opacity only. The scrim is a sibling behind the panel, never an ancestor of glass.
  *
  * Springs use { duration (perceived seconds), bounce (0 = no overshoot) }. Edit only PRESETS below to tune them.
- * Animate transform and opacity only. Position parts with individual properties such as translate to avoid
+ *
+ * Glass never enters through opacity. menu/dialog/sheet parts carry the glass backdrop-filter on this very
+ * element, and opacity multiplies the filtered backdrop too: at opacity < 1 the page behind shows through sharp.
+ * These presets therefore animate transform only. The fade belongs to the content: data-overlay-motion marks the
+ * part, and the stylesheet fades its direct children in on mount and out on data-state=closed. Do not add opacity,
+ * filter, mask, or clip-path here or on an ancestor, and keep opacity, filter, and backdrop-filter out of will-change.
+ *
+ * Position parts with individual properties such as translate to avoid
  * conflicts. translate3d keeps the glass backdrop-filter on a compositing layer so WebKit retains its backdrop during motion.
  */
 
@@ -30,8 +37,6 @@ export type OverlayMotionPreset = 'menu' | 'dialog' | 'sheet' | 'scrim'
 export type OverlayMotionSide = 'top' | 'right' | 'bottom' | 'left'
 
 const clamp = (t: number) => Math.min(1, Math.max(0, t))
-/** Opacity fills before motion completes, avoiding a translucent ghost while the part grows. */
-const fadeIn = (t: number) => clamp(t * 1.5)
 
 /** Menu offset from the side opposite its placement, in rem: [x, y]. */
 const MENU_FROM: Record<OverlayMotionSide, [number, number]> = {
@@ -56,8 +61,7 @@ const PRESETS: Record<OverlayMotionPreset, (side: OverlayMotionSide | undefined)
     const [x, y] = side ? MENU_FROM[side] : [0, 0]
     return {
       style: (t) => ({
-        opacity: fadeIn(t),
-        transform: `translate3d(${x * (1 - t)}rem, ${y * (1 - t)}rem, 0) scale(${0.6 + 0.4 * t})`,
+        transform: `translate3d(${x * (1 - t)}rem, ${y * (1 - t)}rem, 0) scale(${0.9 + 0.1 * t})`,
       }),
       enter: { duration: 0.27, bounce: 0.12 },
       exit: { duration: 0.17 },
@@ -65,8 +69,7 @@ const PRESETS: Record<OverlayMotionPreset, (side: OverlayMotionSide | undefined)
   },
   dialog: () => ({
     style: (t) => ({
-      opacity: fadeIn(t),
-      transform: `translate3d(0, 0, 0) scale(${0.9 + 0.1 * t})`,
+      transform: `translate3d(0, 0, 0) scale(${0.94 + 0.06 * t})`,
     }),
     enter: { duration: 0.27, bounce: 0.08 },
     exit: { duration: 0.16 },
@@ -119,7 +122,14 @@ const OverlayMotion = React.forwardRef<HTMLDivElement, OverlayMotionProps>(funct
     [animate]
   )
 
-  return <div ref={ref} {...props} style={{ backfaceVisibility: 'hidden', ...style }} />
+  return (
+    <div
+      ref={ref}
+      {...props}
+      data-overlay-motion={preset}
+      style={{ backfaceVisibility: 'hidden', ...style }}
+    />
+  )
 })
 
 export { OverlayMotion }

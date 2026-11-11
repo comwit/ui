@@ -80,7 +80,7 @@ function PullIndicator() {
         // At zero pull, hide above by -diameter-10; move downward as pull increases.
         transform: `translate(-50%, calc(var(--ptr-pull, 0) * 1px - ${DIAL + 10}px))`,
         opacity: 'clamp(0, calc(var(--ptr-pull, 0) / 40), 1)',
-        willChange: 'transform, opacity',
+        willChange: 'transform',
       }}
     >
       {({ state }) => (

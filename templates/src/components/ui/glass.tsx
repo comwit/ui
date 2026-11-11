@@ -193,7 +193,12 @@ function GlassButton({
     <Button
       variant="plain"
       size="none"
-      className={cn('group/glass relative isolate rounded-pill bg-transparent', className)}
+      // Opacity on the button would sit above the glass layer and cut off its backdrop, so disabled dimming
+      // moves to the layers beside the glass.
+      className={cn(
+        'group/glass relative isolate rounded-pill bg-transparent disabled:opacity-100 disabled:[&>:not([data-slot=glass])]:opacity-disabled',
+        className
+      )}
       {...props}
     >
       <Glass

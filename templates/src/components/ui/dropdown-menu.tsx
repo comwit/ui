@@ -47,7 +47,7 @@ function DropdownMenuContent({
           {...props}
           asChild
         >
-          {/* Grow from scale 0.6 toward the trigger and exit along the same path using lib/overlay-motion. */}
+          {/* Grow from scale 0.9 toward the trigger and exit along the same path using lib/overlay-motion. */}
           <OverlayMotion preset="menu">{children}</OverlayMotion>
         </DropdownMenuPrimitive.Content>
       </GlassSurface>
