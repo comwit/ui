@@ -77,7 +77,6 @@ function PopupShell({
           <GlassSurface variant="morphing" shape="panel" dense>
             <OverlayMotion
               preset="dialog"
-              data-state={isOpen ? 'open' : 'closed'}
               onExitComplete={settle}
               className="text-popover-foreground pointer-events-auto grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-card p-6 sm:max-w-lg"
             >

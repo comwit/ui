@@ -1149,32 +1149,6 @@
 }
 
 /*
- * Overlay content fade. Glass parts (lib/overlay-motion) move by transform only, because opacity on a backdrop-filter
- * element or its ancestor lets the page behind show through unblurred. The fade lives on the direct children, and
- * skips any child that is or holds glass for the same reason. Later layers keep a child's own animate-* utility.
- */
-@layer components {
-  [data-overlay-motion='menu'] > :not(.glass, :has(.glass)),
-  [data-overlay-motion='dialog'] > :not(.glass, :has(.glass)) {
-    animation: overlay-content-in 140ms ease-out;
-  }
-  [data-overlay-motion='menu'][data-state='closed'] > :not(.glass, :has(.glass)),
-  [data-overlay-motion='dialog'][data-state='closed'] > :not(.glass, :has(.glass)) {
-    animation: overlay-content-out 110ms ease-in forwards;
-  }
-}
-@keyframes overlay-content-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes overlay-content-out {
-  to {
-    opacity: 0;
-  }
-}
-
-/*
  * Toasts: Toast in toast.tsx draws the refractive GlassSurface. Sonner owns only position, stacking, swiping,
  * and timers. Add only the minimal required li-wrapper rules in the same unlayered scope as Sonner's default CSS.
  */
