@@ -155,7 +155,7 @@ function FloatingBackButton({
         data-slot="floating-back-button"
         className={cn(
           'fixed z-appbar transition-transform duration-slow ease-out',
-          'data-[state=hidden]:pointer-events-none data-[state=hidden]:[transform:translateY(calc(-100%-env(safe-area-inset-top)-16px))]',
+          'data-[state=hidden]:pointer-events-none data-[state=hidden]:[transform:translateY(calc(-100%-env(safe-area-inset-top)-48px))]',
           className
         )}
         style={{
